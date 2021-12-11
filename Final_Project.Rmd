@@ -20,7 +20,6 @@ The response variable was the production rate measured in lbs/hr. The experiment
 replicated 3 times and the randomization order for each replication was also recorded.
 
 
-# How to account for replication in model?
 
 ```{r}
 bubblewrap <- read.csv('bubblewrap.csv') 
@@ -39,18 +38,73 @@ aov_model <- aov(rate ~ -1 + loading + line_speed, data = bubblewrap)
 group_means <- aov(rate ~ -1 + loading + line_speed, data = bubblewrap)
 ```
 
+<!--Todo: Fix Margins-->
 ```{r}
 par(mfrow = c(1,2))
 boxplot(rate ~ loading, data = bubblewrap)
 boxplot(rate ~ line_speed, data = bubblewrap)
 ```
-Loading 4 and Line Speed 37 seem to have different means than their counterparts.
+There appears to be a difference in mean loading and line speed with respect to rate. Loading 4 and Line Speed 37 seem to have different means than their counterparts.
 
-#Todo: Fix Margins
+```{r}
+library(car)
+Anova(lm(rate ~ -1 + loading + line_speed, data = bubblewrap), type = "III")
+```
+It seems like both loading and line speed are significant.
+
+We check our model assumptions.
+```{r}
+library(lmtest)
+par(mfrow = c(1,2))
+add_mod <- lm(rate ~ -1 + loading + line_speed, data = bubblewrap)
+plot(add_mod, which = c(1,2))
+shapiro.test(resid(add_mod))
+bptest(add_mod)
+```
+The model appears to be heteroskedastic according to the Breusch-Pagan test, but its residuals do not follow the normal distribution according to the Shapiro-Wilk test. The violation of the residuals assumption can be ignored due to small sample size. We performed a box-cox transformation just to see if we could achieve this assumption regardless.
+
+```{r}
+library(MASS)
+par(mfrow = c(1,2))
+boxcox(add_mod, lambda = seq(1,10,0.05))
+boxcox(add_mod, lambda = seq(4.5,5.5,0.01))
+#Lambda = 5.18
+```
+```{r}
+#transformed model:
+tfmod <- lm(((rate^5 - 1)/5) ~ -1 + loading + line_speed, data = bubblewrap)
+plot(tfmod, which = c(1,2))
+shapiro.test(resid(tfmod))
+bptest(tfmod)
+```
+The box-cox transformation violated more assumptions than the original model. We will cotinue to use the additive model.
+
+
 ```{r}
 loading_and_line_plot <- interaction.plot(x.factor = bubblewrap$loading, response = bubblewrap$rate, trace.factor = bubblewrap$line_speed, fun = mean, col = c('red4','darkblue','darkgreen'), trace.label = "Loading Type", xlab = "Rate", ylab = "Line Speed")
 line_and_loading_plot <- interaction.plot(trace.factor = bubblewrap$loading, response = bubblewrap$rate, x.factor = bubblewrap$line_speed, fun = mean, col = c('red4','darkblue','darkgreen'), trace.label = "Rate", xlab = "Loading Type", ylab = "Line Speed")
 ```
+Some interactions may be present in the model. We test for their significance.    
+
+```{r}
+int_mod  <- lm(rate ~ -1 + loading * line_speed, data = bubblewrap)
+anova(add_mod, int_mod)
+```
+The interaction term is not significant. 
+
+We move on to the pairwise differences.
+```{r,fig.dim = c(8, 6)}
+par(mfrow = c(1,2))
+TukeyHSD(aov_model)
+plot(TukeyHSD(aov_model))
+```
+According to the `loading` chart, there is no difference between `loading = 2` and `loading = 0`. `loading = 4` is statistically different from the other loading types, and based off of the chart we can assume that it leads to higher rate of production. On the other chart, `line_speed = 36` and `line_speed = 37` do not appear to be statistically different. Moreover, `line_speed = 36` and `line_speed = 38` appear to not be statistically different as well. However, `line_speed = 37` and `line_speed = 38` are statistically different, and when observing the sign differences, we can surmise that `line_speed = 37` results in the highest rate. Therefore, we suggest `loading = 4` and `line_speed = 37` for the highest improvement in rate.
+
+
+
 #Modelling
+
+
+
 
 
