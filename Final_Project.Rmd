@@ -1,0 +1,51 @@
+---
+title: "STAT 425 Final Project"
+author: "Michael Garbus mgarbus2"
+date: "12/13/2021"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Company XX is a manufacturer of several types of protective packaging, including bubble wrap
+sold in both retail and bulk. The objective of this project is to determine the best operating
+conditions for the bubble wrap lines to increase production capacity.
+
+The response variable was the production rate measured in lbs/hr. The experiment was
+replicated 3 times and the randomization order for each replication was also recorded.
+
+
+# How to account for replication in model?
+
+```{r}
+bubblewrap <- read.csv('bubblewrap.csv') 
+```
+
+```{r}
+# set factors
+bubblewrap$line_speed <- as.factor(bubblewrap$line_speed)
+bubblewrap$loading <- as.factor(bubblewrap$loading)
+head(bubblewrap)
+```
+
+```{r}
+#Means
+aov(rate ~ -1 + loading + line_speed, data = bubblewrap)$coef
+```
+
+```{r}
+par(mfrow = c(1,2))
+boxplot(rate ~ loading, data = bubblewrap)
+
+
+
+```
+
+
+
+
