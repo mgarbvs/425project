@@ -35,17 +35,22 @@ head(bubblewrap)
 
 ```{r}
 #Means
-aov(rate ~ -1 + loading + line_speed, data = bubblewrap)$coef
+aov_model <- aov(rate ~ -1 + loading + line_speed, data = bubblewrap)
+group_means <- aov(rate ~ -1 + loading + line_speed, data = bubblewrap)
 ```
 
 ```{r}
 par(mfrow = c(1,2))
 boxplot(rate ~ loading, data = bubblewrap)
-
-
-
+boxplot(rate ~ line_speed, data = bubblewrap)
 ```
+Loading 4 and Line Speed 37 seem to have different means than their counterparts.
 
-
+#Todo: Fix Margins
+```{r}
+loading_and_line_plot <- interaction.plot(x.factor = bubblewrap$loading, response = bubblewrap$rate, trace.factor = bubblewrap$line_speed, fun = mean, col = c('red4','darkblue','darkgreen'), trace.label = "Loading Type", xlab = "Rate", ylab = "Line Speed")
+line_and_loading_plot <- interaction.plot(trace.factor = bubblewrap$loading, response = bubblewrap$rate, x.factor = bubblewrap$line_speed, fun = mean, col = c('red4','darkblue','darkgreen'), trace.label = "Rate", xlab = "Loading Type", ylab = "Line Speed")
+```
+#Modelling
 
 
