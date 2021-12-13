@@ -137,6 +137,63 @@ boxplot(rate ~ loading, data = new_bubblewrap)
 boxplot(rate ~ line_speed, data = new_bubblewrap)
 ```
 
+There appears to be a difference in mean loading and line speed with respect to rate.
+
+```{r}
+library(car)
+Anova(lm(rate ~ -1 + loading + line_speed, data = new_bubblewrap), type = "III")
+```
+
+It seems like loading is significant, but line speed is insignificant, so we will use only the loading predictor in our model for further analysis.
+
+# Assumptions and Transformations 
+
+We check our model assumptions.
+
+```{r}
+library(lmtest)
+par(mfrow = c(1,2))
+loading_mod <- lm(rate ~  -1 + loading, data = new_bubblewrap)
+plot(loading_mod, which = c(1,2))
+shapiro.test(resid(loading_mod))
+bptest(loading_mod)
+```
+
+The model appears to be homoskedastic according to the Breusch-Pagan test and its residuals do not follow the normal distribution according to the Shapiro-Wilk test. The violation of the heteroscedasticity assumption can be ignored due to small sample size. We performed a box-cox transformation just to see if we could achieve this assumption regardless.
+
+```{r}
+library(MASS)
+par(mfrow = c(1,2))
+boxcox(loading_mod, lambda = seq(1,10,0.05))
+boxcox(loading_mod, lambda = seq(4.5,5.5,0.01))
+# lambda = 5.3
+```
+
+```{r}
+# transformed model
+tfmod <- lm(((rate^5.3 - 1)/5.3) ~ -1 + loading, data = new_bubblewrap)
+plot(tfmod, which = c(1,2))
+shapiro.test(resid(tfmod))
+bptest(tfmod)
+```
+
+The box-cox transformation satisfies the normal residuals assumption according to the Breusch-Pagan test, but barely passes the heteroskedasticity test. Since our main goal was to improve the residual assumption, we are satisfied with this result. Therefore, we will continue our analysis with the box-cox transformed model.
+
+# Interaction Terms
+
+Since factor line speed is removed from the dataset due to its insignificance, we only have one factor, loading, in this case and will not have the interaction term. Thus, there is no need to test the significance of the interaction term.     
+# Pairwise Differences
+
+We move on to the pairwise differences.
+
+```{r}
+TukeyHSD(aov(((rate^5.3 - 1)/5.3) ~ -1 + loading, data = new_bubblewrap))
+plot(TukeyHSD(aov(((rate^5.3 - 1)/5.3) ~ -1 + loading, data = new_bubblewrap)))
+```
+
+According to the `loading` chart, there is no difference between `loading = 2` and `loading = 0`. `loading = 4` is statistically different from the other loading types, and based off of the chart we can assume that it leads to higher rate of production.
+
+
 
 
 
